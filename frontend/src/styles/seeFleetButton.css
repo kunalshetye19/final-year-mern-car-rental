@@ -1,0 +1,61 @@
+/* Smaller Orange + Black Uiverse Button */
+
+.see-fleet-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;            /* ⬅ smaller padding */
+  background-color: #0f0f0f;
+  border: 2px solid #ff9a33;     /* ⬅ thinner border */
+  color: #ff7a00;
+  gap: 8px;
+  border-radius: 32px;           /* ⬅ softer curve */
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 12px rgba(255, 122, 0, 0.25);
+}
+
+.see-fleet-btn .text {
+  font-size: 0.75rem;            /* ⬅ smaller text */
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+.see-fleet-btn .svg {
+  display: flex;
+  align-items: center;
+}
+
+.see-fleet-btn .svg svg {
+  width: 18px;                   /* ⬅ smaller arrow */
+  height: 18px;
+  fill: #ff7a00;
+}
+
+.see-fleet-btn:hover {
+  background-color: #ff7a00;
+  color: #0f0f0f;
+  border-color: #ffb066;
+  box-shadow: 0 0 16px rgba(255, 122, 0, 0.5);
+}
+
+.see-fleet-btn:hover .svg svg {
+  fill: #0f0f0f;
+  animation: jello-vertical 0.9s both;
+  transform-origin: left;
+}
+
+.see-fleet-btn:active {
+  transform: scale(0.96);
+}
+
+/* Jello Animation (unchanged) */
+@keyframes jello-vertical {
+  0% { transform: scale3d(1, 1, 1); }
+  30% { transform: scale3d(0.75, 1.25, 1); }
+  40% { transform: scale3d(1.25, 0.75, 1); }
+  50% { transform: scale3d(0.85, 1.15, 1); }
+  65% { transform: scale3d(1.05, 0.95, 1); }
+  75% { transform: scale3d(0.95, 1.05, 1); }
+  100% { transform: scale3d(1, 1, 1); }
+}
