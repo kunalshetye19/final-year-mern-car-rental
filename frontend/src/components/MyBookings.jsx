@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import {
@@ -464,6 +465,7 @@ const StatsCard = ({ value, label, color }) => (
 );
 
 const MyBookings = () => {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(false);
@@ -512,6 +514,15 @@ const MyBookings = () => {
       if (!isMounted.current) return;
       if (err?.name === "CanceledError" || err?.message === "canceled") {
         setError("Request cancelled / timed out");
+      } else if (err?.response?.status === 401) {
+        // Token invalid or expired -> clear auth and redirect to login
+        try {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        } catch {}
+        setError(err.response?.data?.message || "Invalid or expired token");
+        // Give user a moment to see the message, then redirect
+        setTimeout(() => navigate("/login", { replace: true }), 900);
       } else {
         setError(
           err.response?.data?.message ||

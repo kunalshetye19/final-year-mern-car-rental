@@ -29,7 +29,7 @@ const HomeCars = () => {
     headers: { Accept: "application/json" },
   });
   const limit = 6;
-  const fallbackImage = `${base}/uploads/default-car.png`;
+  const fallbackImage = `${base}/uploads/default-car.svg`;
 
   useEffect(() => {
     const t = setTimeout(() => setAnimateCards(true), 300);
@@ -74,7 +74,7 @@ const HomeCars = () => {
   };
 
   const buildImageSrc = (image) => {
-    if (!image) return "";
+    if (!image) return `https://via.placeholder.com/400x250.png?text=No+Image`;
     if (Array.isArray(image)) image = image[0];
     if (typeof image !== "string") return "";
     const t = image.trim();

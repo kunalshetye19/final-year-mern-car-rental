@@ -3,7 +3,7 @@
 /* ===================== SCHABO FONT ===================== */
 @font-face {
   font-family: "Schabo";
-  src: url("./assets/fonts/Schabo-Regular.ttf") format("truetype");
+  src: url("./assets/SCHABO-Condensed.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
 }

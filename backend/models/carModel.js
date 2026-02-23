@@ -20,6 +20,7 @@ const carBookingSubSchema = new Schema(
 );
 
 const carSchema = new Schema({
+    owner: { type: Schema.Types.ObjectId, ref: "Vendor", required: false },
     make: { type: String, required: true, trim: true },
     model: { type: String, required: true, trim: true },
     year: { type: Number, required: true },

@@ -1,15 +1,13 @@
 // src/components/Navbar.jsx
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FaBars, FaTimes, FaUser, FaSignOutAlt } from "react-icons/fa";
-import logo from "../assets/logocar.png";
-import { navbarStyles as styles } from "../assets/dummyStyles";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 const LOGOUT_ENDPOINT = "/api/auth/logout";
+const ME_ENDPOINT = "/api/auth/me";
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(
     () => !!localStorage.getItem("token")
   );
@@ -21,11 +19,8 @@ const Navbar = () => {
       return null;
     }
   });
-  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const menuRef = useRef(null);
-  const buttonRef = useRef(null);
   const abortRef = useRef(null);
 
   const base = "http://localhost:5000";
@@ -33,19 +28,6 @@ const Navbar = () => {
     baseURL: base,
     headers: { Accept: "application/json" },
   });
-
-  const navLinks = [
-    { to: "/", label: "Home" },
-    { to: "/cars", label: "Cars" },
-    { to: "/contact", label: "Contact" },
-    { to: "/bookings", label: "My Bookings" },
-  ];
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const validateToken = useCallback(
     async (signal) => {
@@ -146,13 +128,11 @@ const Navbar = () => {
     localStorage.removeItem("user");
     setIsLoggedIn(false);
     setUser(null);
-    setIsOpen(false);
 
     navigate("/", { replace: true });
   }, [api, navigate]);
 
   useEffect(() => {
-    setIsOpen(false);
     setIsLoggedIn(!!localStorage.getItem("token"));
     try {
       const raw = localStorage.getItem("user");
@@ -162,190 +142,110 @@ const Navbar = () => {
     }
   }, [location]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        isOpen &&
-        menuRef.current &&
-        buttonRef.current &&
-        !menuRef.current.contains(event.target) &&
-        !buttonRef.current.contains(event.target)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "Escape" && isOpen) setIsOpen(false);
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) setIsOpen(false);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const isActive = (path) => {
+  function isActive(path) {
     if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
-  };
+  }
 
   return (
-    <nav
-      className={`${styles.nav.base} ${
-        scrolled ? styles.nav.scrolled : styles.nav.notScrolled
-      }`}
-      aria-label="Main navigation"
-    >
+    <nav aria-label="Main navigation" className="bg-white shadow-md fixed top-0 left-0 right-0 z-[100]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-center">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <div
-            className={`${styles.floatingNav.base} ${
-              scrolled
-                ? styles.floatingNav.scrolled
-                : styles.floatingNav.notScrolled
-            }`}
-            role="region"
-            aria-roledescription="navigation"
+            onClick={() => navigate("/")}
+            className="flex items-center cursor-pointer"
           >
-            <div className="flex items-center justify-between gap-4">
-              <Link to="/" className="flex items-center">
-                <div className={styles.logoContainer}>
-                  <img
-                    src={logo}
-                    alt="Karzone logo"
-                    className="h-[1em] w-auto block"
-                    style={{ display: "block", objectFit: "contain" }}
-                  />
-                  <span className={styles.logoText}>KARZONE</span>
-                </div>
-              </Link>
+            <img
+              src="/src/assets/logocar.png"
+              alt="Karzone logo"
+              className="h-10 w-auto"
+            />
+            <span className="ml-2 text-xl font-bold text-gray-800">KARZONE</span>
+          </div>
 
-              <div className={styles.navLinksContainer}>
-                <div className={styles.navLinksInner}>
-                  {navLinks.map((link, index) => (
-                    <React.Fragment key={link.to}>
-                      <Link
-                        to={link.to}
-                        className={`${styles.navLink.base} ${
-                          isActive(link.to)
-                            ? styles.navLink.active
-                            : styles.navLink.inactive
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
-
-                      {index < navLinks.length - 1 && (
-                        <div className={styles.separator} aria-hidden="true" />
-                      )}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-
-              <div className={styles.userActions}>
-                {isLoggedIn ? (
-                  <button
-                    onClick={handleLogout}
-                    className={styles.authButton}
-                    aria-label="Logout"
-                    title={user?.name || "Logout"}
-                  >
-                    <FaSignOutAlt className="text-base" />
-                    <span className={styles.authText}>Logout</span>
-                  </button>
-                ) : (
-                  <Link
-                    to="/login"
-                    className={styles.authButton}
-                    aria-label="Login"
-                  >
-                    <FaUser className="text-base" />
-                    <span className={styles.authText}>Login</span>
-                  </Link>
-                )}
-              </div>
-
-              <div className="md:hidden flex items-center">
-                <button
-                  ref={buttonRef}
-                  onClick={() => setIsOpen((p) => !p)}
-                  className={styles.mobileMenuButton}
-                  aria-expanded={isOpen}
-                  aria-controls="mobile-menu"
-                  aria-label={isOpen ? "Close menu" : "Open menu"}
-                >
-                  {isOpen ? (
-                    <FaTimes className="h-5 w-5" />
-                  ) : (
-                    <FaBars className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
+          {/* Desktop Navigation Links */}
+          <div className="hidden md:flex items-center space-x-8">
+            <div
+              onClick={() => navigate("/")}
+              className={`text-sm font-medium cursor-pointer transition-colors ${
+                isActive("/") ? "text-orange-500" : "text-gray-600 hover:text-orange-500"
+              }`}
+            >
+              Home
+            </div>
+            <div
+              onClick={() => navigate("/vendors")}
+              className={`text-sm font-medium cursor-pointer transition-colors ${
+                isActive("/vendors") ? "text-orange-500" : "text-gray-600 hover:text-orange-500"
+              }`}
+            >
+              Vendors
+            </div>
+            <div
+              onClick={() => navigate("/cars")}
+              className={`text-sm font-medium cursor-pointer transition-colors ${
+                isActive("/cars") ? "text-orange-500" : "text-gray-600 hover:text-orange-500"
+              }`}
+            >
+              Cars
+            </div>
+            <div
+              onClick={() => navigate("/contact")}
+              className={`text-sm font-medium cursor-pointer transition-colors ${
+                isActive("/contact") ? "text-orange-500" : "text-gray-600 hover:text-orange-500"
+              }`}
+            >
+              Contact
+            </div>
+            <div
+              onClick={() => navigate("/bookings")}
+              className={`text-sm font-medium cursor-pointer transition-colors ${
+                isActive("/bookings") ? "text-orange-500" : "text-gray-600 hover:text-orange-500"
+              }`}
+            >
+              My Bookings
             </div>
           </div>
-        </div>
-      </div>
 
-      <div
-        id="mobile-menu"
-        ref={menuRef}
-        className={`${styles.mobileMenu.container} ${
-          isOpen ? styles.mobileMenu.open : styles.mobileMenu.closed
-        }`}
-        aria-hidden={!isOpen}
-      >
-        <div className={styles.mobileMenuInner}>
-          <div className="px-4 pt-3 pb-4 space-y-2">
-            <div className={styles.mobileGrid}>
-              {navLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={() => setIsOpen(false)}
-                  className={`${styles.mobileLink.base} ${
-                    isActive(link.to)
-                      ? styles.mobileLink.active
-                      : styles.mobileLink.inactive
-                  }`}
+          {/* Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            {isLoggedIn ? (
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Logout
+              </button>
+            ) : (
+              <>
+                <div
+                  onClick={() => navigate("/login")}
+                  className="px-4 py-2 text-gray-600 hover:text-orange-500 text-sm font-medium cursor-pointer transition-colors"
                 >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-
-            <div className={styles.divider} />
-
-            <div className="pt-1">
-              {isLoggedIn ? (
-                <button
-                  onClick={handleLogout}
-                  className={styles.mobileAuthButton}
-                >
-                  <FaSignOutAlt className="mr-3 text-base" />
-                  Logout
-                </button>
-              ) : (
-                <Link
-                  to="/login"
-                  onClick={() => setIsOpen(false)}
-                  className={styles.mobileAuthButton}
-                >
-                  <FaUser className="mr-3 text-base" />
                   Login
-                </Link>
-              )}
-            </div>
+                </div>
+                <div
+                  onClick={() => navigate("/signup")}
+                  className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors"
+                >
+                  Sign Up
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => navigate("/menu")}
+              className="text-gray-600 hover:text-orange-500 p-2"
+              aria-label="Open menu"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>

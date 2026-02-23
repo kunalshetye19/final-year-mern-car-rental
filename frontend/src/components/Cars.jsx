@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   FaCar,
   FaGasPump,
@@ -17,35 +17,43 @@ const startOfDay = (d) => {
   x.setHours(0, 0, 0, 0);
   return x;
 };
-// ceil so partial days count as next day
 const daysBetween = (from, to) =>
   Math.ceil((startOfDay(to) - startOfDay(from)) / MS_PER_DAY);
 
 const Cars = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [vendors, setVendors] = useState([]);
+  const [vendorFilter, setVendorFilter] = useState("");
 
   const abortControllerRef = useRef(null);
   const base = "http://localhost:5000";
   const limit = 12;
-  const fallbackImage = `${base}/uploads/default-car.png`;
+  const fallbackImage = `${base}/uploads/default-car.svg`;
 
   useEffect(() => {
-    fetchCars();
+    const vendorParam = searchParams.get("vendor");
+    if (vendorParam) {
+      setVendorFilter(vendorParam);
+      fetchCars(vendorParam);
+    } else {
+      fetchCars();
+    }
+    fetchVendors();
     return () => {
       if (abortControllerRef.current) {
         try {
           abortControllerRef.current.abort();
-        } catch (e) {
-        }
+        } catch (e) {}
       }
     };
-  }, []);
+  }, [searchParams]);
 
-  const fetchCars = async () => {
+  const fetchCars = async (vendorArg) => {
     setLoading(true);
     setError("");
     if (abortControllerRef.current) {
@@ -57,8 +65,12 @@ const Cars = () => {
     abortControllerRef.current = controller;
 
     try {
+      const params = { limit };
+      const vendorToUse = vendorArg !== undefined ? vendorArg : vendorFilter;
+      if (vendorToUse) params.vendor = vendorToUse;
+
       const res = await axios.get(`${base}/api/cars`, {
-        params: { limit },
+        params,
         signal: controller.signal,
         headers: { Accept: "application/json" },
       });
@@ -66,8 +78,6 @@ const Cars = () => {
       const data = res.data;
       console.log("API RESPONSE:", data);
       setCars(Array.isArray(data.cars) ? data.cars : []);
-
-
     } catch (err) {
       const isCanceled =
         err?.code === "ERR_CANCELED" ||
@@ -82,6 +92,26 @@ const Cars = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ Fixed: handle all API response shapes { data: [] }, { vendors: [] }, or plain []
+  const fetchVendors = async () => {
+    try {
+      const res = await axios.get(`${base}/api/vendors`);
+      const vendorList =
+        res.data?.data ||
+        res.data?.vendors ||
+        (Array.isArray(res.data) ? res.data : []);
+      setVendors(vendorList);
+    } catch (err) {
+      console.error("Failed to fetch vendors:", err);
+    }
+  };
+
+  const handleVendorChange = (e) => {
+    const v = e.target.value;
+    setVendorFilter(v);
+    fetchCars(v);
   };
 
   const buildImageSrc = (image) => {
@@ -102,7 +132,6 @@ const Cars = () => {
   const handleImageError = (e) => {
     const img = e?.target;
     if (!img) return;
-    // prevent infinite loop if fallback also fails
     img.onerror = null;
     img.src = fallbackImage;
     img.alt = img.alt || "Image not available";
@@ -129,9 +158,6 @@ const Cars = () => {
     return `${n} ${pluralForm ?? singular + "s"}`;
   };
 
-  // Compute canonical availability:
-  // - prefer car.bookings (if present): find any booking that covers today -> booked until booking.return
-  // - otherwise fallback to car.availability provided by backend
   const computeEffectiveAvailability = (car) => {
     const today = new Date();
 
@@ -173,7 +199,6 @@ const Cars = () => {
         car.availability.state === "available_until_reservation" &&
         Number(car.availability.daysAvailable ?? -1) === 0
       ) {
-        // reservation starts today -> treat as booked
         return {
           state: "booked",
           until: car.availability.until ?? null,
@@ -188,7 +213,6 @@ const Cars = () => {
     return { state: "fully_available", source: "none" };
   };
 
-  // Given an 'until' ISO date, compute day-after available date + daysUntilAvailable
   const computeAvailableMeta = (untilIso) => {
     if (!untilIso) return null;
     try {
@@ -204,17 +228,19 @@ const Cars = () => {
     }
   };
 
-  // Render availability badge — prefer showing concrete available date when booked
   const renderAvailabilityBadge = (rawAvailability, car) => {
-    // Check car status first - if not available, show immediately
     if (car?.status && car.status !== "available") {
-      const statusLabel = car.status === "rented" ? "Rented" : 
-                         car.status === "maintenance" ? "Maintenance" :
-                         "Unavailable";
-      const badgeColor = car.status === "maintenance" 
-        ? "bg-yellow-50 text-yellow-700"
-        : "bg-red-50 text-red-700";
-      
+      const statusLabel =
+        car.status === "rented"
+          ? "Rented"
+          : car.status === "maintenance"
+          ? "Maintenance"
+          : "Unavailable";
+      const badgeColor =
+        car.status === "maintenance"
+          ? "bg-yellow-50 text-yellow-700"
+          : "bg-red-50 text-red-700";
+
       return (
         <span className={`px-2 py-1 text-xs rounded-md font-semibold ${badgeColor}`}>
           {statusLabel}
@@ -258,7 +284,6 @@ const Cars = () => {
           </div>
         );
       }
-      // booked but no until info
       return (
         <div className="flex flex-col items-end">
           <span className="px-2 py-1 text-xs rounded-md bg-red-50 text-red-700 font-semibold">
@@ -312,7 +337,6 @@ const Cars = () => {
       );
     }
 
-    // fully_available or fallback
     return (
       <span className="px-2 py-1 text-xs rounded-md bg-green-50 text-green-700">
         Available
@@ -335,7 +359,6 @@ const Cars = () => {
 
   return (
     <div className={carPageStyles.pageContainer}>
-      {/* Main Content */}
       <div className={carPageStyles.contentContainer}>
         <div className={carPageStyles.headerContainer}>
           <div className={carPageStyles.headerDecoration}></div>
@@ -344,12 +367,54 @@ const Cars = () => {
             Discover our exclusive fleet of luxury vehicles. Each car is
             meticulously maintained and ready for your journey.
           </p>
+
+          {/* Vendor Filter Section */}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <label className="text-sm font-medium text-gray-300">Filter by Vendor:</label>
+            <div className="flex items-center gap-2">
+              <select
+                value={vendorFilter}
+                onChange={handleVendorChange}
+                className="px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-sm font-medium text-white hover:border-orange-500 transition-colors focus:outline-none focus:border-orange-500"
+              >
+                <option value="">All Vendors</option>
+                {vendors.map((v) => (
+                  <option key={v._id} value={v._id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+              {vendorFilter && (
+                <button
+                  onClick={() => {
+                    setVendorFilter("");
+                    fetchCars("");
+                  }}
+                  className="px-3 py-2 rounded-lg bg-red-500/20 text-red-400 text-sm font-medium hover:bg-red-500/30 transition-colors"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Active Filter Indicator */}
+          {vendorFilter && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-orange-500/20 border border-orange-500/50 rounded-lg">
+              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+              <span className="text-sm text-orange-300">
+                Showing cars from{" "}
+                <span className="font-semibold">
+                  {vendors.find((v) => v._id === vendorFilter)?.name}
+                </span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Grid */}
         <div className={carPageStyles.gridContainer}>
           {loading &&
-            // show skeleton placeholders when loading
             Array.from({ length: limit }).map((_, i) => (
               <div key={`skeleton-${i}`} className={carPageStyles.carCard}>
                 <div className={carPageStyles.glowEffect}></div>
@@ -369,9 +434,7 @@ const Cars = () => {
             ))}
 
           {!loading && error && (
-            <div className="col-span-full text-center text-red-600">
-              {error}
-            </div>
+            <div className="col-span-full text-center text-red-600">{error}</div>
           )}
 
           {!loading && !error && cars.length === 0 && (
@@ -401,7 +464,6 @@ const Cars = () => {
                       className={carPageStyles.carImage}
                     />
 
-                    {/* availability badge at top-right of card */}
                     <div className="absolute right-4 top-4 z-20">
                       {renderAvailabilityBadge(car.availability, car)}
                     </div>
@@ -464,15 +526,12 @@ const Cars = () => {
                       {disabled ? "Unavailable" : "Book Now"}
                       <FaArrowRight />
                     </button>
-
-
                   </div>
                 </div>
               );
             })}
         </div>
 
-        {/* Floating decorative elements */}
         <div className={carPageStyles.decor1}></div>
         <div className={carPageStyles.decor2}></div>
       </div>

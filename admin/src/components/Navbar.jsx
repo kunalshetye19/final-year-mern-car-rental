@@ -2,12 +2,12 @@ import React, { useEffect, useRef, useState } from 'react'
 import { navbarStyles as s } from '../assets/dummyStyles'
 import { Link } from 'react-router-dom'
 import logo from '../assets/logocar.png'
-import { CalendarCheck, Car, Menu, PlusCircle, X } from 'lucide-react';
-
+import { CalendarCheck, Car, Menu, PlusCircle, Store, X } from 'lucide-react';
 
 const navLinks = [
   { path: "/", icon: PlusCircle, label: "Add Car" },
   { path: "/manage-cars", icon: Car, label: "Manage Cars" },
+  { path: "/manage-vendors", icon: Store, label: "Vendors" },
   { path: "/bookings", icon: CalendarCheck, label: "Bookings" },
 ];
 
@@ -17,14 +17,13 @@ const Navbar = () => {
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
 
-
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     const onDocClick = (e) => {
       if (
         isOpen &&
@@ -40,8 +39,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [isOpen]);
 
-
-
   return (
     <div className={s.navbar(scrolled)}>
       <div className={s.navbarInner}>
@@ -50,52 +47,51 @@ const Navbar = () => {
             <div className={s.contentContainer}>
               <Link to="/" className={s.logoLink}>
                 <div className={s.logoContainer}>
-                    <img 
-                        src={logo}
-                        alt="Logo"
-                        className={s.logoImage}
-                        style={{
-                            objectFit: "contain"
-                        }}
-                    />
-                    <span className={s.logoText}>ADMIN</span>
-                  </div>
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className={s.logoImage}
+                    style={{ objectFit: "contain" }}
+                  />
+                  <span className={s.logoText}>ADMIN</span>
+                </div>
               </Link>
-              <div className={s.desktopNav}>
-                 <div className={s.navLinksContainer}>
-                        {navLinks.map((link, index) => {
-                          const Icon = link.icon;
-                          return (
-                            <React.Fragment key={link.path}>
-                              <Link to={link.path} className={s.navLink}>
-                                <Icon className="w-4 h-4" />
-                                <span>{link.label}</span>
-                              </Link>
 
-                              {index < navLinks.length - 1 && (
-                                <div className={s.navDivider} />
-                              )}
-                            </React.Fragment>
-                          )
-                        })}
-                 </div>
+              <div className={s.desktopNav}>
+                <div className={s.navLinksContainer}>
+                  {navLinks.map((link, index) => {
+                    const Icon = link.icon;
+                    return (
+                      <React.Fragment key={link.path}>
+                        <Link to={link.path} className={s.navLink}>
+                          <Icon className="w-4 h-4" />
+                          <span>{link.label}</span>
+                        </Link>
+                        {index < navLinks.length - 1 && (
+                          <div className={s.navDivider} />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className={s.mobileMenuButton}>
-                <button ref={buttonRef} onClick={() => setIsOpen((v) => !v)} className={s.menuButton} aria-label='Toggle Menu' aria-expanded={isOpen}>
-                  {isOpen ? (
-                    <X className="w-5 h-5" />
-                  ) : (
-                    <Menu className="w-5 h-5" />
-                  )}
+                <button
+                  ref={buttonRef}
+                  onClick={() => setIsOpen((v) => !v)}
+                  className={s.menuButton}
+                  aria-label="Toggle Menu"
+                  aria-expanded={isOpen}
+                >
+                  {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
               </div>
-
             </div>
           </div>
         </div>
       </div>
-      
+
       {isOpen && (
         <div ref={menuRef} className={s.mobileMenu}>
           <div className={s.mobileMenuContainer}>
@@ -111,13 +107,13 @@ const Navbar = () => {
                   <Icon className="w-5 h-5" />
                   <span>{link.label}</span>
                 </Link>
-              )
+              );
             })}
           </div>
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

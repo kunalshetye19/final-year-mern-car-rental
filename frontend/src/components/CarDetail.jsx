@@ -30,12 +30,12 @@ const api = axios.create({
 const todayISO = () => new Date().toISOString().split("T")[0];
 
 const buildImageSrc = (image) => {
-  if (!image) return `${API_BASE}/uploads/default-car.png`;
+  if (!image) return `${API_BASE}/uploads/default-car.svg`;
   if (Array.isArray(image)) image = image[0];
   if (!image || typeof image !== "string")
-    return `${API_BASE}/uploads/default-car.png`;
+    return `${API_BASE}/uploads/default-car.svg`;
   const t = image.trim();
-  if (!t) return `${API_BASE}/uploads/default-car.png`;
+  if (!t) return `https://via.placeholder.com/800x500.png?text=No+Image`;
   if (t.startsWith("http://") || t.startsWith("https://")) return t;
   if (t.startsWith("/")) return `${API_BASE}${t}`;
   return `${API_BASE}/uploads/${t}`;
@@ -43,7 +43,7 @@ const buildImageSrc = (image) => {
 
 const handleImageError = (
   e,
-  fallback = `${API_BASE}/uploads/default-car.png`
+  fallback = `${API_BASE}/uploads/default-car.svg`
 ) => {
   const img = e?.target;
   if (!img) return;
@@ -51,7 +51,7 @@ const handleImageError = (
   img.src = fallback;
   img.onerror = () => {
     img.onerror = null;
-    img.src = "https://via.placeholder.com/800x500.png?text=No+Image";
+    img.src = `${API_BASE}/uploads/default-car.svg`;
   };
   img.alt = img.alt || "Image not available";
   img.style.objectFit = img.style.objectFit || "cover";
@@ -480,6 +480,22 @@ console.log("UserId being sent:", userId);
           </div>
 
           <div className={carDetailStyles.rightColumn}>
+            {car.owner && typeof car.owner === 'object' && (
+              <div className="mb-4 p-4 rounded-xl bg-gray-800/60 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white">Owner</h3>
+                <div className="text-gray-300">{car.owner.name}</div>
+                {car.owner.email && (
+                  <div className="text-sm text-gray-400">{car.owner.email}</div>
+                )}
+                {car.owner.phone && (
+                  <div className="text-sm text-gray-400">Phone: <a className="text-orange-400" href={`tel:${car.owner.phone}`}>{car.owner.phone}</a></div>
+                )}
+                {car.owner.verified && (
+                  <div className="text-sm text-green-400 mt-1">Verified Vendor</div>
+                )}
+              </div>
+            )}
+
             <div className={carDetailStyles.bookingCard}>
               <h2 className={carDetailStyles.bookingTitle}>
                 Reserve{" "}

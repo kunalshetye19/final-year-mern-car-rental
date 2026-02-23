@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { AddCarPageStyles, toastStyles } from '../assets/dummyStyles';
 import axios from 'axios';
 import {toast, ToastContainer} from "react-toastify"
@@ -9,6 +9,7 @@ const api = axios.create({ baseURL });
 const AddCar = () => {
   const initialFormData = {
     carName: "",
+    owner: "",
     dailyPrice: "",
     seats: "",
     fuelType: "Petrol",
@@ -23,7 +24,24 @@ const AddCar = () => {
   };
 
   const [data, setData] = useState(initialFormData);
+  const [vendors, setVendors] = useState([]);
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    let mounted = true;
+    api
+      .get("/api/vendors")
+      .then((res) => {
+        if (!mounted) return;
+        const vendorList =
+          res.data?.data ||
+          res.data?.vendors ||
+          (Array.isArray(res.data) ? res.data : []);
+        setVendors(vendorList);
+      })
+      .catch(() => {});
+    return () => (mounted = false);
+  }, []);
 
   const handleChange = useCallback((e) => {
   const { name, value } = e.target;
@@ -92,6 +110,7 @@ const AddCar = () => {
     try {
       const formData = new FormData();
       const fieldMappings = {
+        owner: data.owner || "",
         make: data.carName,
         dailyRate: data.dailyPrice,
         seats: data.seats,
@@ -239,13 +258,13 @@ const AddCar = () => {
       type: "input",
       config: {
         name: "dailyPrice",
-        label: "Daily Price ($)",
+        label: "Daily Price (₹)",          // ✅ changed $ → ₹
         type: "number",
         required: true,
         min: "1",
         placeholder: "45",
         props: { className: "pl-8" },
-        prefix: <span className="absolute left-3 top-3 text-gray-400">$</span>,
+        prefix: <span className="absolute left-3 top-3 text-gray-400">₹</span>,  // ✅ changed $ → ₹
       },
     },
     {
@@ -373,6 +392,23 @@ const AddCar = () => {
             })}
 
            <div>
+            <label className={AddCarPageStyles.label}>Owner / Vendor (optional)</label>
+            <select
+              name="owner"
+              value={data.owner}
+              onChange={handleChange}
+              className={AddCarPageStyles.select}
+            >
+              <option value="">-- Select Vendor --</option>
+              {vendors.map((v) => (
+                <option key={v._id} value={v._id}>
+                  {v.name} {v.email ? `(${v.email})` : ""}
+                </option>
+              ))}
+            </select>
+           </div>
+
+           <div>
             <label className={AddCarPageStyles.label}>Transmission</label>
             <div className={AddCarPageStyles.radioContainer}>
               {['Automatic', 'Manual'].map((t) => (
@@ -489,7 +525,6 @@ const AddCar = () => {
         </div>
       </form>
     </div>
-
 
       <ToastContainer
         position="top-right"

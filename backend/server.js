@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet"; // Helmet helps secure Express apps by setting various HTTP headers
+import morgan from "morgan";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -12,6 +13,7 @@ import userRouter from "./routes/userRoutes.js";
 import carRouter from "./routes/carRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
 import paymentRouter from "./routes/paymentRoutes.js";
+import vendorRouter from "./routes/vendorRoutes.js";
 
 dotenv.config();
 
@@ -27,6 +29,8 @@ connectDB();
 
 // MIDDLEWARES
 app.use(cors());
+// Request logging
+app.use(morgan('dev'));
 
 // HELMET FIX: This section is critical to fix the ERR_BLOCKED_BY_RESPONSE error
 app.use(
@@ -51,6 +55,7 @@ app.use("/api/auth", userRouter);
 app.use("/api/cars", carRouter);
 app.use("/api/bookings", bookingRouter);
 app.use("/api/payments", paymentRouter);
+app.use("/api/vendors", vendorRouter);
 
 // Health Check
 app.get("/api/ping", (req, res) =>

@@ -7,6 +7,7 @@ import SignUp from "./components/SignUp";
 import ContactPage from "./pages/ContactPage";
 import CarPage from "./pages/CarPage";
 import CarDetailPage from "./pages/CarDetailPage";
+import Vendors from "./pages/Vendors";
 import { FaArrowUp } from "react-icons/fa";
 import VerifyPaymentPage from "./pages/VerifyPaymentPage";
 import MyBooking from "./pages/MyBooking";
@@ -67,6 +68,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/cars" element={<CarPage />} />
+        <Route path="/vendors" element={<Vendors />} />
         
 
         <Route
