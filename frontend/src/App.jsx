@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Navbar from "./components/Navbar";
 import Login from "./components/Login";
 import SignUp from "./components/SignUp";
+import ForgotPassword from "./components/ForgotPassword";
 import ContactPage from "./pages/ContactPage";
 import CarPage from "./pages/CarPage";
 import CarDetailPage from "./pages/CarDetailPage";
@@ -56,7 +57,7 @@ const App = () => {
    * This checks for static routes and any route starting with /cars/
    */
   const hideNavbar = 
-    ["/login", "/signup", "/contact"].includes(location.pathname) || 
+    ["/login", "/signup", "/forgot-password", "/contact"].includes(location.pathname) || 
     location.pathname.startsWith("/cars/");
 
   return (
@@ -90,6 +91,11 @@ const App = () => {
         <Route path="/login" element={
           <RedirectIfAuthenticated>
             <Login />
+          </RedirectIfAuthenticated>
+        } />
+        <Route path="/forgot-password" element={
+          <RedirectIfAuthenticated>
+            <ForgotPassword />
           </RedirectIfAuthenticated>
         } />
         <Route path="/signup" element={

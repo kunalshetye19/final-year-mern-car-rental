@@ -205,6 +205,15 @@ catch (err) {
             </button>
           </form>
 
+          {/* Forgot Password */}
+          <div className={loginStyles.signupSection}>
+            <p className={loginStyles.signupText}>
+              <a href="/forgot-password" className={loginStyles.signupLink}>
+                Forgot Password?
+              </a>
+            </p>
+          </div>
+
           {/* Signup */}
           <div className={loginStyles.signupSection}>
             <p className={loginStyles.signupText}>
