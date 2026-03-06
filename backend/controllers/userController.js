@@ -295,3 +295,48 @@ export async function login(req, res) {
         });
     }
 }
+
+// GET CURRENT USER (for token validation)
+export async function getMe(req, res) {
+    try {
+        const user = req.user;
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email
+            }
+        });
+    } catch (err) {
+        console.error("GetMe error", err);
+        return res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+}
+
+// LOGOUT (client-side logout)
+export async function logout(req, res) {
+    try {
+        return res.status(200).json({
+            success: true,
+            message: "Logged out successfully"
+        });
+    } catch (err) {
+        console.error("Logout error", err);
+        return res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+}

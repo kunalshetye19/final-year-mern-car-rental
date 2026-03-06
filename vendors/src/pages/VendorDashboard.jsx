@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { FaCar, FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaUser, FaTimes } from 'react-icons/fa';
+import { FaCar, FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaUser, FaTimes, FaMoneyBillWave, FaCheckCircle, FaClock, FaSpinner } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -327,7 +327,9 @@ const VendorDashboard = ({ vendorId, vendorName, onLogout }) => {
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingCar, setEditingCar] = useState(null); // ← holds car being edited
+  const [editingCar, setEditingCar] = useState(null);
+  const [income, setIncome] = useState(null);
+  const [incomeLoading, setIncomeLoading] = useState(true);
 
   const fetchCars = useCallback(async () => {
     try {
@@ -343,7 +345,24 @@ const VendorDashboard = ({ vendorId, vendorName, onLogout }) => {
     }
   }, [vendorId]);
 
-  useEffect(() => { fetchCars(); }, [fetchCars]);
+  const fetchIncome = useCallback(async () => {
+    try {
+      setIncomeLoading(true);
+      const response = await api.get(`/api/vendors/${vendorId}/income`);
+      if (response.data.success) {
+        setIncome(response.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load income:', err);
+    } finally {
+      setIncomeLoading(false);
+    }
+  }, [vendorId]);
+
+  useEffect(() => { 
+    fetchCars(); 
+    fetchIncome();
+  }, [fetchCars, fetchIncome]);
 
   const handleDelete = async (carId) => {
     if (!window.confirm('Are you sure you want to delete this car?')) return;
@@ -396,7 +415,63 @@ const VendorDashboard = ({ vendorId, vendorName, onLogout }) => {
           <p className="text-gray-400">Manage your vehicles and bookings</p>
         </div>
 
-        {/* Stats */}
+        {/* Income Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-green-900/50 to-green-800/30 border border-green-700/50 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <FaMoneyBillWave className="w-6 h-6 text-green-400" />
+              <p className="text-gray-300 text-sm font-medium">Total Income</p>
+            </div>
+            {incomeLoading ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-green-800/50 rounded w-24"></div>
+              </div>
+            ) : (
+              <p className="text-3xl font-bold text-green-400">₹{(income?.totalIncome || 0).toLocaleString()}</p>
+            )}
+          </div>
+          <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/30 border border-blue-700/50 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <FaCheckCircle className="w-6 h-6 text-blue-400" />
+              <p className="text-gray-300 text-sm font-medium">Completed</p>
+            </div>
+            {incomeLoading ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-blue-800/50 rounded w-24"></div>
+              </div>
+            ) : (
+              <p className="text-3xl font-bold text-blue-400">₹{(income?.completedIncome || 0).toLocaleString()}</p>
+            )}
+          </div>
+          <div className="bg-gradient-to-br from-yellow-900/50 to-yellow-800/30 border border-yellow-700/50 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <FaClock className="w-6 h-6 text-yellow-400" />
+              <p className="text-gray-300 text-sm font-medium">Pending</p>
+            </div>
+            {incomeLoading ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-yellow-800/50 rounded w-24"></div>
+              </div>
+            ) : (
+              <p className="text-3xl font-bold text-yellow-400">₹{(income?.pendingIncome || 0).toLocaleString()}</p>
+            )}
+          </div>
+          <div className="bg-gradient-to-br from-purple-900/50 to-purple-800/30 border border-purple-700/50 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <FaSpinner className="w-6 h-6 text-purple-400" />
+              <p className="text-gray-300 text-sm font-medium">Active</p>
+            </div>
+            {incomeLoading ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-purple-800/50 rounded w-24"></div>
+              </div>
+            ) : (
+              <p className="text-3xl font-bold text-purple-400">₹{(income?.activeIncome || 0).toLocaleString()}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Fleet Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
             <p className="text-gray-400 text-sm">Total Cars</p>
@@ -444,7 +519,7 @@ const VendorDashboard = ({ vendorId, vendorName, onLogout }) => {
               <CarCard
                 key={car._id}
                 car={car}
-                onEdit={(car) => setEditingCar(car)}   // ← opens edit modal
+                onEdit={(car) => setEditingCar(car)}
                 onDelete={handleDelete}
               />
             ))}

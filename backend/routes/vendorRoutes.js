@@ -4,7 +4,8 @@ import {
     vendorLogin,
     vendorRegister,
     updateVendor,
-    deleteVendor
+    deleteVendor,
+    getVendorIncome
 } from "../controllers/vendorController.js";
 
 const router = express.Router();
@@ -15,6 +16,9 @@ router.get("/", getVendors);
 // Authentication routes only - vendors manage themselves via vendor portal
 router.post("/login", vendorLogin);
 router.post("/register", vendorRegister);
+
+// Vendor income route
+router.get("/:id/income", getVendorIncome);
 
 // Admin management routes
 router.put("/:id", updateVendor);

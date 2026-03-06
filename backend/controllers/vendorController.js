@@ -1,4 +1,6 @@
 import Vendor from "../models/vendorModel.js";
+import Car from "../models/carModel.js";
+import Booking from "../models/bookingModel.js";
 
 // Get all vendors (public - for frontend to display)
 export const getVendors = async (req, res) => {
@@ -148,5 +150,74 @@ export const deleteVendor = async (req, res) => {
     } catch (err) {
         console.error('deleteVendor error:', err && err.stack ? err.stack : err);
         res.status(500).json({ success: false, message: err.message || 'Failed to delete vendor', stack: err.stack });
+    }
+};
+
+// Get Vendor Income
+export const getVendorIncome = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const vendor = await Vendor.findById(id);
+        if (!vendor) {
+            return res.status(404).json({ message: "Vendor not found" });
+        }
+
+        // Get all cars owned by this vendor
+        const cars = await Car.find({ owner: id }).select('_id');
+        const carIds = cars.map(car => car._id);
+
+        // Get all bookings for these cars
+        const bookings = await Booking.find({ 'car.id': { $in: carIds } });
+
+        // Calculate income statistics
+        let totalIncome = 0;
+        let completedIncome = 0;
+        let pendingIncome = 0;
+        let activeIncome = 0;
+
+        bookings.forEach(booking => {
+            const amount = booking.amount || 0;
+            totalIncome += amount;
+
+            if (booking.status === 'completed' && booking.paymentStatus === 'paid') {
+                completedIncome += amount;
+            } else if (booking.paymentStatus === 'pending') {
+                pendingIncome += amount;
+            } else if (booking.status === 'active' || booking.status === 'upcoming') {
+                activeIncome += amount;
+            }
+        });
+
+        // Get recent bookings (last 5)
+        const recentBookings = bookings
+            .sort((a, b) => new Date(b.bookingDate) - new Date(a.bookingDate))
+            .slice(0, 5)
+            .map(booking => ({
+                id: booking._id,
+                car: booking.car,
+                customer: booking.customer,
+                amount: booking.amount,
+                status: booking.status,
+                paymentStatus: booking.paymentStatus,
+                bookingDate: booking.bookingDate,
+                pickupDate: booking.pickupDate,
+                returnDate: booking.returnDate
+            }));
+
+        res.json({
+            success: true,
+            data: {
+                totalIncome,
+                completedIncome,
+                pendingIncome,
+                activeIncome,
+                totalBookings: bookings.length,
+                recentBookings
+            }
+        });
+    } catch (err) {
+        console.error('getVendorIncome error:', err && err.stack ? err.stack : err);
+        res.status(500).json({ success: false, message: err.message || 'Failed to fetch vendor income', stack: err.stack });
     }
 };
